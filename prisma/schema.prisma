@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  ratings      UserRating[]
+  imports      ImportBatch[]
+}
+
+model Book {
+  id        String       @id @default(cuid())
+  isbn13    String?      @unique
+  title     String
+  authors   String[]
+  coverUrl  String?
+  metadata  Json?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  ratings   UserRating[]
+}
+
+model UserRating {
+  id            String       @id @default(cuid())
+  userId        String
+  bookId        String
+  rating        Float
+  ratedAt       DateTime?
+  source        String?
+  createdAt     DateTime     @default(now())
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book          Book         @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  importBatch   ImportBatch? @relation(fields: [importBatchId], references: [id])
+  importBatchId String?
+
+  @@unique([userId, bookId])
+}
+
+model ImportBatch {
+  id        String       @id @default(cuid())
+  userId    String
+  filename  String?
+  columnMap Json?
+  stats     Json?
+  status    String       @default("pending")
+  rawData   Json?
+  createdAt DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ratings   UserRating[]
+}
